@@ -1,99 +1,78 @@
-//Requirements Importer
-const File_Downloader = require("nodejs-file-downloader")
-const Images_Scraper = require("images-scraper")
+"use strict";
 
-//Functions
-const Scraper = new Images_Scraper({
+// Dependencies
+const fileDownloader = require("nodejs-file-downloader")
+const imagesScraper = require("images-scraper")
+
+// Functions
+const scraper = new imagesScraper({
     puppeteer: {
         headless: true,
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
     }
 })
 
-//Main
-async function self(directory = String, keyword = String, amount = BigInt, callback){
+// Main
+async function imsad(directory, keyword, amount, callback){
     var si = keyword
-    var image_index = 0
-    var images_link = []
-    var not_image_index = 0
+    var imageIndex = 0
+    var imagesLink = []
+    var notImageIndex = 0
 
-    if(!directory){
-        callback("Invalid directory..")
-        return
-    }
-
-    if(!keyword){
-        callback("Invalid keyword.")
-        return
-    }
-
-    if(!amount){
-        callback("Invalid amount.")
-        return
-    }
-
-    if(isNaN(amount)){
-        callback("Invalid amount is not an int.")
-        return
-    }
+    if(!directory) return callback("Invalid directory..")
+    if(!keyword) return callback("Invalid keyword.")
+    if(!amount) return callback("Invalid amount.")
+    if(isNaN(amount)) return callback("Invalid amount is not an int.")
 
     amount = parseInt(amount)
 
-    const images = await Scraper.scrape(si, amount)
+    const images = await scraper.scrape(si, amount)
 
     if(!images){
         callback(`Unable to find any images of ${keyword}`)
         return
     }
 
-    for( image in images ){
-        images_link.push(images[image].url)
-    }
+    for( const image of images ) imagesLink.push(image.url)
 
-    if(amount > images_link.length){
+    if(amount > imagesLink.length){
         console.log("amount argument exceeded scraped images length, therefore we made amount the same as scraped images length.")
-        amount = images_link.length
+        amount = imagesLink.length
     }
 
-    Init()
-    async function Init(){
-        if(image_index == amount){
-            image_index -= not_image_index
-            callback(`Downloaded images amount: ${image_index} | Downloaded images directory: ${directory}`)
+    scrape()
+    async function scrape(){
+        if(imageIndex == amount){
+            imageIndex -= notImageIndex
+            callback(`Downloaded images amount: ${imageIndex} | Downloaded images directory: ${directory}`)
             return
         }
 
-        var downloader = new File_Downloader({
-            url: images_link[image_index],
+        var downloader = new fileDownloader({
+            url: imagesLink[imageIndex],
             directory: directory
         })
 
         try{
-            if(images_link[image_index].indexOf("gif") != -1 || images_link[image_index].indexOf("png") != -1 || images_link[image_index].indexOf("jpg") != -1 || images_link[image_index].indexOf("jpeg") != -1  || images_link[image_index].indexOf("raw") != -1 || images_link[image_index].indexOf("tif") != -1 || images_link[image_index].indexOf("tiff") != -1 || images_link[image_index].indexOf("aviff") != -1){
+            if(imagesLink[imageIndex].indexOf("gif") != -1 || imagesLink[imageIndex].indexOf("png") != -1 || imagesLink[imageIndex].indexOf("jpg") != -1 || imagesLink[imageIndex].indexOf("jpeg") != -1  || imagesLink[imageIndex].indexOf("raw") != -1 || imagesLink[imageIndex].indexOf("tif") != -1 || imagesLink[imageIndex].indexOf("tiff") != -1 || imagesLink[imageIndex].indexOf("aviff") != -1){
                 await downloader.download()
 
-                console.log(`Download status: Success | Download link: ${images_link[image_index]}`)
-                image_index += 1
-                Init()
-                return
+                console.log(`Download status: Success | Download link: ${imagesLink[imageIndex]}`)
+                imageIndex++
+                return scrape()
             }
 
-            console.log(`Download status: Fail | Download link: ${images_link[image_index]}`)
-            not_image_index += 1
-            image_index += 1
-            Init()
-            return
+            console.log(`Download status: Fail | Download link: ${imagesLink[imageIndex]}`)
+            notImageIndex++
+            imageIndex++
         }catch{
-            console.log(`Download status: Fail | Download link: ${images_link[image_index]}`)
+            console.log(`Download status: Fail | Download link: ${imagesLink[imageIndex]}`)
 
-            image_index += 1
-            Init()
-            return
+            imageIndex++
         }
+
+        scrape()
     }
 }
 
-//Exporter
-module.exports = {
-    self: self
-}
+module.exports = imsad
